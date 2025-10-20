@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Генерація UTM міток для партнерів CRMiUM</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background-color: #f8f9fa;
+      color: #212529;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      padding: 30px 10px 10px;
+    }
+    header img {
+      height: 60px;
+      margin-bottom: 10px;
+    }
+    main {
+      max-width: 750px;
+      margin: 20px auto 50px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 30px;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-top: 5px;
+    }
+    .checkboxes {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .checkboxes label {
+      font-weight: 500;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 25px;
+      display: block;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0069d9;
+    }
+    .results {
+      margin-top: 30px;
+    }
+    .link-block {
+      background: #f1f3f5;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      word-break: break-all;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .link-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    footer {
+      text-align: center;
+      font-size: 13px;
+      color: #868e96;
+      margin-bottom: 20px;
+    }
+    .copy-btn {
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .copy-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://s.dou.ua/CACHE/images/img/announces/Crmium_logo_black/4a7140f59854951e05fb9b4b23f7efe7.png" alt="CRMiUM Logo" />
+  </header>
+  <main>
+    <h1>Генерація UTM міток для партнерів CRMiUM</h1>
+
+    <label for="partner">Сайт партнера:</label>
+    <input type="text" id="partner" placeholder="Наприклад: https://www.gamadness.com/" />
+
+    <label for="partnerId">ID партнера (з CRM):</label>
+    <input type="number" id="partnerId" placeholder="Наприклад: 12345" />
+
+    <label for="article">Назва статті:</label>
+    <input type="text" id="article" placeholder="Наприклад: Як оптимізувати CRM" />
+
+    <label>Мовна версія сайту:</label>
+    <div class="checkboxes">
+      <label><input type="checkbox" name="lang" value="uk" checked> UK</label>
+      <label><input type="checkbox" name="lang" value="en"> EN</label>
+      <label><input type="checkbox" name="lang" value="pl"> PL</label>
+      <label><input type="checkbox" name="lang" value="ru"> RU</label>
+    </div>
+
+    <button onclick="generateUTM()">Згенерувати посилання</button>
+
+    <div class="results" id="results"></div>
+  </main>
+  <footer>© CRMiUM — Генератор UTM міток</footer>
+
+  <script>
+    function cleanPartnerName(url) {
+      try {
+        url = url.replace(/^https?:\/\//, '').replace(/^www\./, '');
+        url = url.split('/')[0];
+        url = url.split('.')[0];
+        url = url.replace(/[^a-zA-Z0-9\-]/g, '');
+        return url.toLowerCase();
+      } catch (e) {
+        return url;
+      }
+    }
+
+    function transliterate(str) {
+      const map = {
+        'а':'a','б':'b','в':'v','г':'h','ґ':'g','д':'d','е':'e','є':'ie','ж':'zh','з':'z','и':'y','і':'i','ї':'yi','й':'i','к':'k','л':'l',
+        'м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ь':'','ю':'yu','я':'ya'
+      };
+      return str
+        .toLowerCase()
+        .split('')
+        .map(ch => map[ch] || ch)
+        .join('')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .substring(0, 40);
+    }
+
+    function generateUTM() {
+      const partnerInput = document.getElementById('partner').value.trim();
+      const partner = cleanPartnerName(partnerInput);
+      const id = document.getElementById('partnerId').value.trim();
+      const articleRaw = document.getElementById('article').value.trim();
+      const article = transliterate(articleRaw);
+      const langs = Array.from(document.querySelectorAll('input[name="lang"]:checked')).map(el => el.value);
+
+      if (!partner || !id || !article) {
+        alert('Будь ласка, заповніть усі поля.');
+        return;
+      }
+
+      const pages = {
+        'Головна': '',
+        'Zoho CRM': 'crm/zoho-ukr/',
+        'Odoo CRM': 'crm/odoo-crm-ukr/',
+        'Creatio CRM': 'crm/creatio-crm-ukr/'
+      };
+
+      const container = document.getElementById('results');
+      container.innerHTML = '';
+
+      langs.forEach(lang => {
+        const base =
+          lang === 'uk' ? 'https://crmium.com/uk/' :
+          lang === 'en' ? 'https://crmium.com/en/' :
+          lang === 'pl' ? 'https://crmium.com/pl/' :
+          'https://crmium.com/';
+        const langTitle = lang.toUpperCase();
+
+        const langBlock = document.createElement('div');
+        langBlock.innerHTML = `<h3>${langTitle}</h3>`;
+        Object.entries(pages).forEach(([title, path]) => {
+          const url = `${base}${path}?utm_source=${partner}&utm_medium=partner&utm_campaign=${partner}_blog_${id}&utm_content=${article}`;
+          const block = document.createElement('div');
+          block.className = 'link-block';
+          block.innerHTML = `<div class="link-title">${title}</div>
+                             <div>
+                               <span>${url}</span>
+                               <button class="copy-btn" onclick="copyToClipboard('${url}')">Копіювати</button>
+                             </div>`;
+          langBlock.appendChild(block);
+        });
+        container.appendChild(langBlock);
+      });
+    }
+
+    function copyToClipboard(text) {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      alert('Посилання скопійовано в буфер обміну!');
+    }
+  </script>
+</body>
+</html>
